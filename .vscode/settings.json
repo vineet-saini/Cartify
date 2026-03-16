@@ -1,0 +1,9 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.project.sourcePaths": [],
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/android/build/**",
+        "**/ios/build/**"
+    ]
+}
