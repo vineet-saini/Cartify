@@ -10,16 +10,18 @@ const SuccessStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     marginVertical:20,
+    // marginBottom:50,
   },
 
   animationContainer: {
     alignItems: 'center',
     marginBottom: 40,
+    marginTop: 80,
   },
 
   successCircle: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
     borderRadius: 60,
     backgroundColor: '#4CAF50',
     justifyContent: 'center',
@@ -90,11 +92,12 @@ const SuccessStyles = StyleSheet.create({
   },
 
   detailValue: {
+    maxWidth:'60%',
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
     flex: 1,
-    textAlign: 'right',
+    // textAlign: 'right',
   },
 
   totalAmount: {

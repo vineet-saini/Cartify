@@ -496,7 +496,7 @@ const CartScreen = ({ navigation }) => {
               onPress={selectedItems.length === cart.length ? deselectAll : selectAll}
             >
               <Icon
-                name={selectedItems.length === cart.length ? "checkbox" : "checkbox-outline"}
+                name={selectedItems.length === cart.length ? "checkbox" : "square-outline"}
                 size={20}
                 color="#4CAF50"
               />

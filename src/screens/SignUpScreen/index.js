@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import { Text, View, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Keyboard, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import SignUpStyle from './style';
@@ -44,7 +44,11 @@ const SignUpScreen = ({navigation}) =>{
 
             await AsyncStorage.setItem('users', JSON.stringify(users));
 
-            Alert.alert("Account created Successfully");
+            // Alert.alert("Account created Successfully");
+            Toast.show({
+                type:'success',
+                text1:'Account Created Successfully',
+            })
             navigation.navigate('Login');
         }
         catch(error){
@@ -53,6 +57,7 @@ const SignUpScreen = ({navigation}) =>{
     };
 
     return (
+        <Pressable style={SignUpStyle.press} onPress={Keyboard.dismiss}>
         <View style={SignUpStyle.container}>
             <Text style={SignUpStyle.title}>Create Account</Text>
 
@@ -99,6 +104,7 @@ const SignUpScreen = ({navigation}) =>{
                 </Text>
             </View>
         </View>
+        </Pressable>
     )
 }
 
