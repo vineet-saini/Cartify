@@ -1,7 +1,9 @@
 import {StyleSheet} from 'react-native';
 
 const SignUpStyle = StyleSheet.create({
-
+press:{
+    flex:1,
+},
 container:{
 flex:1,
 backgroundColor:"#f5f6fa",

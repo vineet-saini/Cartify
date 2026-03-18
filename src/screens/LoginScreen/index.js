@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import {View, Text, Button, TextInput, TouchableOpacity, Alert} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, Keyboard, Pressable} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginStyles from './style';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -62,6 +62,7 @@ const LoginScreen = ({navigation}) =>{
     
 
     return (
+      <Pressable style={LoginStyles.press} onPress={Keyboard.dismiss}>
       <View style={LoginStyles.container}>
         <Text style={LoginStyles.title}>Welcome Back</Text>
 
@@ -114,6 +115,7 @@ const LoginScreen = ({navigation}) =>{
         </View>
         {/* <Footer /> */}
       </View>
+      </Pressable>
     );
 
 }

@@ -77,38 +77,43 @@ import OrdersScreen from '../screens/OrdersScreen/index';
 import BottomTabs from '../navigation/BottomTabs';
 import PaymentSuccessScreen from '../screens/PaymentSuccessScreen/index';
 import OrderDetailsScreen from '../screens/OrdersScreen/OrderDetailsScreen/index';
-
+import SplashScreen from '../screens/SplashScreen/index';
+import OnboardingScreen from '../screens/OnboardingScreen/index';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator  screenOptions={{headerShown:false}}>
-        <Stack.Screen 
-          name= "Sign Up"
-          component={SignUpScreen}
-          options={{headerShown:false}}
-        />
+      <Stack.Navigator  
+        initialRouteName='Splash'
+        // initialRouteName='Onboard'
+        screenOptions={{headerShown:false}}
+      >
         <Stack.Screen 
           name="Login"
           component={LoginScreen}
           options={{headerShown:false}}
         />
-        <Stack.Screen 
-          name='Forgot Password'
-          component={ForgotPasswordScreen}
-        />
+        <Stack.Screen name='Main'component={BottomTabs} />
         <Stack.Screen 
           name="Home"
           component={HomeScreen}
           options={{title : "Cartify", headerBackVisible:false, headerTitleAlign:'center'}}
-        />
+          />
+        <Stack.Screen 
+          name= "Sign Up"
+          component={SignUpScreen}
+          options={{headerShown:false}}
+          />
+        <Stack.Screen 
+          name='Forgot Password'
+          component={ForgotPasswordScreen}
+          />
         <Stack.Screen 
           name="Profile" 
           component={ProfileScreen} 
-        />
-        <Stack.Screen name='Main'component={BottomTabs} />
+          />
         <Stack.Screen
         name="AddTask"
         component={AddTaskScreen}
@@ -116,16 +121,18 @@ const AppNavigator = () => {
         <Stack.Screen 
           name = "Cart"
           component={CartScreen}
-        />
+          />
         <Stack.Screen 
           name = "ProductDetails"
           component={ProductDetailsScreen}
-        />
+          />
         <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="Orders" component={OrdersScreen} />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
         <Stack.Screen name='OrderDetails' component={OrderDetailsScreen} />
+        <Stack.Screen name="Splash" component={SplashScreen}/>
+        <Stack.Screen name="Onboard" component={OnboardingScreen} />
         
       </Stack.Navigator>
     </NavigationContainer>
