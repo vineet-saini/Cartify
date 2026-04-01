@@ -12,37 +12,48 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { logout, updateProfile } from "../../redux/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
 import { launchImageLibrary, launchCamera } from "react-native-image-picker";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/Ionicons";
 import ProfileStyle from "./style";
 
 const ProfileScreen = ({ navigation }) => {
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
   const [defaultAddress, setDefaultAddress] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const isFocused = useIsFocused();
 
+  const user = useSelector(state => state.auth.currentUser);
+  const dispatch = useDispatch();
+
   useEffect(() => {
-    if (isFocused) loadUser();
-  }, [isFocused]);
-
-  const loadUser = async () => {
-    const data = await AsyncStorage.getItem("currentUser");
-    if (data) {
-      const parsedUser = JSON.parse(data);
-      setUser(parsedUser);
-      setProfileImage(parsedUser.profileImage || null);
-
-      if (parsedUser.addresses) {
-        const defaultAddr = parsedUser.addresses.find(a => a.isDefault);
+    if (user?.addresses?.length > 0) {
+        const defaultAddr = user.addresses.find(a => a.isDefault);
         setDefaultAddress(defaultAddr);
       }
-    }
-  };
+      setProfileImage(user?.profileImage || null)
+  }, [user]);
+
+  // const loadUser = async () => {
+  //   // const data = await AsyncStorage.getItem("currentUser");
+    
+  //   if (data) {
+  //     const parsedUser = JSON.parse(data);
+  //     // setUser(parsedUser);
+  //     setProfileImage(parsedUser.profileImage || null);
+
+  //     if (user?.addresses?.length > 0) {
+  //       const defaultAddr = user.addresses.find(a => a.isDefault);
+  //       setDefaultAddress(defaultAddr);
+  //     }
+  //   }
+  // };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("currentUser");
+    // await AsyncStorage.removeItem("currentUser");
+    dispatch(logout())
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
@@ -122,8 +133,9 @@ const ProfileScreen = ({ navigation }) => {
           profileImage: imageUri
         };
 
-        setUser(updatedUser);
-        await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
+        // setUser(updatedUser);
+        dispatch(updateProfile({profileImage: imageUri}));
+        // await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
 
         Toast.show({
           type:'success',

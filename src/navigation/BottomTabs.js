@@ -54,6 +54,7 @@
 import React, { useState, useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
 import { useCart } from '../context/CartContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -67,7 +68,10 @@ const Tab = createBottomTabNavigator();
 
 const BottomTabs = () => {
     // const [cartCount, setCartCount] = useState(0);
-    const {cartCount, updateCartCount} = useCart();
+    // const {cartCount, updateCartCount} = useCart();
+
+    const cartCount = useSelector(state => state.cart?.items?.length || 0);
+    // const cartCount = useSelector(state => state.cart.length);
 
     // const getCartCount = async () => {
     //     const currentUser = await AsyncStorage.getItem('currentUser');
@@ -80,11 +84,11 @@ const BottomTabs = () => {
     //     setCartCount(items.length);
     // };
 
-    useFocusEffect(
-        React.useCallback(() => {
-            updateCartCount();   
-        }, [])
-    );
+    // useFocusEffect(
+    //     React.useCallback(() => {
+    //         updateCartCount();   
+    //     }, [])
+    // );
 
     return (
         <Tab.Navigator 

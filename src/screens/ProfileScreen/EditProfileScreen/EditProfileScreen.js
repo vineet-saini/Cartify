@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, TextInput, TouchableOpacity, Text, Alert, ScrollView, KeyboardAvoidingView, Platform,} from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { updateProfile } from "../../../redux/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
 import Icon from "react-native-vector-icons";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import Toast from "react-native-toast-message";
@@ -12,37 +14,44 @@ const EditProfileScreen = ({ navigation }) => {
   const [phone, setPhone] = useState("");
   const [addresses, setAddresses] = useState([]);
 
+  const dispatch = useDispatch();
+
+  const user = useSelector(state => state.auth.currentUser);
+
   useEffect(() => {
-    loadUser();
-  }, []);
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      setAddresses(user.addresses || []);
+    }
+  }, [user]);
 
   const loadUser = async () => {
     try {
-      const data = await AsyncStorage.getItem("currentUser");
-      if (data) {
-        const user = JSON.parse(data);
-        setName(user.name || "");
-        setEmail(user.email || "");
-        setPhone(user.phone || "");
-        setAddresses(user.addresses || []);
-      }
+      // const data = await AsyncStorage.getItem("currentUser");
+      // if (data) {
+      //   const user = JSON.parse(data);
+        
+      // }
     } catch (error) {
       console.log("Error loading user", error);
     }
   };
 
-  const updateProfile = async () => {
-    try {
+  const updateProfileHandler =  () => {
+    // try {
       const updatedUser = { name, email, phone, addresses };
 
-      await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      // await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      dispatch(updateProfile(updatedUser));
 
-      const existingUsers = await AsyncStorage.getItem("users");
-      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      // const existingUsers = await AsyncStorage.getItem("users");
+      // const users = existingUsers ? JSON.parse(existingUsers) : [];
 
-      const updatedUsers = users.map(u => u.email === email ? { ...u, ...updatedUser, password: u.password || "" } : u);
+      // const updatedUsers = users.map(u => u.email === email ? { ...u, ...updatedUser, password: u.password || "" } : u);
 
-      await AsyncStorage.setItem("users", JSON.stringify(updatedUsers));
+      // await AsyncStorage.setItem("users", JSON.stringify(updatedUsers));
 
       // Alert.alert("Success", "Profile Updated Successfully");
       Toast.show({
@@ -51,8 +60,20 @@ const EditProfileScreen = ({ navigation }) => {
         // position:"bottom"
       })
       navigation.goBack();
-    } catch (error) {
-      console.log("Error saving user", error);
+    // } 
+    // catch (error) {
+    //   console.log("Error saving user", error);
+    // }
+    const hasEmptyAddress = addresses.some(
+      a => !a.street || !a.city || !a.pincode,
+    );
+
+    if (hasEmptyAddress) {
+      Toast.show({
+        type: 'error',
+        text1: 'Please fill all address fields',
+      });
+      return;
     }
   };
 
@@ -65,16 +86,16 @@ const EditProfileScreen = ({ navigation }) => {
       pincode: "",
       isDefault: addresses.length === 0
     };
-    setAddresses([...addresses, newAddress]);
+    setAddresses(prev => [...prev, newAddress]);
   };
 
   const updateAddressField = (id, field, value) => {
-    setAddresses(addresses.map(a => (a.id === id ? { ...a, [field]: value } : a)));
+    setAddresses(prev => prev.map(a => (a.id === id ? { ...a, [field]: value } : a)));
   };
 
-  const removeAddress = (id) => setAddresses(addresses.filter(a => a.id !== id));
+  const removeAddress = (id) => setAddresses(prev => prev.filter(a => a.id !== id));
 
-  const setDefaultAddress = (id) => setAddresses(addresses.map(a => ({ ...a, isDefault: a.id === id })));
+  const setDefaultAddress = (id) => setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.id === id })));
 
   return (
     <KeyboardAvoidingView
@@ -179,7 +200,7 @@ const EditProfileScreen = ({ navigation }) => {
           <Text style={EditProfileStyle.buttonText}>+ Add Address</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={EditProfileStyle.button} onPress={updateProfile}>
+        <TouchableOpacity style={EditProfileStyle.button} onPress={updateProfileHandler}>
           <Text style={EditProfileStyle.buttonText}>Save Changes</Text>
         </TouchableOpacity>
       </ScrollView>

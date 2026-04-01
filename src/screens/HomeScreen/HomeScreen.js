@@ -12,7 +12,17 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { addProductToCart } from '../../utils/cartUtils';
+// import { addProductToCart } from '../../utils/cartUtils';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart } from '../../redux/slices/cartSlice';
+import {
+  fetchProductsStart,
+  fetchProductsSuccess,
+  fetchProductsFailure,
+  setCategory,
+  setRefreshing,
+  setSearch,
+} from '../../redux/slices/productsSlice';
 import HomeStyles from './HomeStyles';
 import Toast from 'react-native-toast-message';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -21,27 +31,66 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [user, setUser] = useState(null);
+  // const [products, setProducts] = useState([]);
+  // const [search, setSearch] = useState('');
+  // const [categories, setCategories] = useState([]);
+  // const [selectedCategory, setSelectedCategory] = useState("All");
+  // const [loading, setLoading] = useState(true);
+  // const [refreshing, setRefreshing] = useState(false);
+  // const [cartCount, setCartCount] = useState(0);
+  // const [user, setUser] = useState(null);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+
+  const dispatch = useDispatch();
+
+  const user = useSelector(state => state.auth.currentUser);
+  const cartCount = useSelector(state => state.cart.items.length);
+  const lastAction = useSelector(state => state.cart.lastAction);
+  const {
+    products,
+    categories,
+    selectedCategory,
+    search,
+    loading,
+    refreshing,
+  } = useSelector(state => state.products);
 
   useEffect(() => {
     getProducts();
-    getCartCount();
-    getCurrentUser();
+    // getCartCount();
+    // user;
   }, []);
+
+  useEffect(() => {
+    if (!lastAction) return;
+
+    if (lastAction.type === 'updated') {
+      Toast.show({
+        type: 'info',
+        text1: 'Quantity Updated!',
+        text2: `${lastAction.item.name} quantity increased`,
+      });
+    }
+
+    if (lastAction.type === 'added') {
+      Toast.show({
+        type: 'success',
+        text1: 'Added to Cart! 🛒',
+        text2: `${lastAction.item.quantity} x ${lastAction.item.name}`,
+        // onHide: () => {
+        //   navigation.navigate('Main', { screen: 'Cart' });
+        // },
+      });
+    }
+
+    // dispatch(clearLastAction());
+  }, [lastAction, navigation, dispatch]);
 
   const getCurrentUser = async () => {
     try {
       const currentUser = await AsyncStorage.getItem('currentUser');
       if (currentUser) {
-        setUser(JSON.parse(currentUser));
+        // setUser(JSON.parse(currentUser));
       }
     } catch (error) {
       console.log('Error getting user:', error);
@@ -50,111 +99,122 @@ const HomeScreen = ({ navigation }) => {
 
   const getProducts = async () => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      dispatch(fetchProductsStart());
       const response = await fetch(
-        'https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/products.json'
+        'https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/products.json',
       );
       const data = await response.json();
-      
-      setProducts(data);
+
+      // setProducts(data);
+      dispatch(fetchProductsSuccess(data));
+      dispatch(setRefreshing(false));
       setFeaturedProducts(data.slice(0, 5));
-      
-      const uniqueCategories = ["All", ...new Set(data.map(p => p.category))];
-      setCategories(uniqueCategories);
+
+      const uniqueCategories = ['All', ...new Set(data.map(p => p.category))];
+      // setCategories(uniqueCategories);
     } catch (error) {
-      console.log(error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error loading products',
-        text2: 'Please check your internet connection'
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      dispatch(fetchProductsFailure(error.message));
+      // console.log(error);
+      // Toast.show({
+      //   type: 'error',
+      //   text1: 'Error loading products',
+      //   text2: 'Please check your internet connection'
+      // });
     }
+    // finally {
+    //   setLoading(false);
+    //   setRefreshing(false);
+    // }
   };
 
   const getCartCount = async () => {
     try {
       const currentUser = await AsyncStorage.getItem('currentUser');
       if (!currentUser) return;
-      
+
       const user = JSON.parse(currentUser);
       const cartKey = `cart_${user.email}`;
       const cart = await AsyncStorage.getItem(cartKey);
       const items = cart ? JSON.parse(cart) : [];
-      setCartCount(items.length);
+      // setCartCount(items.length);
+      // {cartCount}
     } catch (error) {
       console.log('Error getting cart count:', error);
     }
   };
 
   const onRefresh = () => {
-    setRefreshing(true);
+    dispatch(setRefreshing(true));
     getProducts();
-    getCartCount();
+    // getCartCount();
   };
 
-  const handleCategoryChange = (category) => {
-    setLoading(true);
+  const handleCategoryChange = category => {
+    // setLoading(true);
 
-    setTimeout(()=>{
-      setSelectedCategory(category);
-      setLoading(false);
-    },100);
+    dispatch(setCategory(category));
+    // setTimeout(()=>{
+    // setSelectedCategory(category);
+    // setLoading(false);
+    // },100);
   };
 
-  const categoryFiltered = selectedCategory === "All"
-    ? products
-    : products.filter(item => item.category === selectedCategory);
+  const categoryFiltered =
+    selectedCategory === 'All'
+      ? products
+      : products.filter(item => item.category === selectedCategory);
 
-  const filteredProducts = search.length < 3
-    ? categoryFiltered
-    : categoryFiltered.filter(item =>
-        item.name.toLowerCase().includes(search.toLowerCase())
-      );
+  const filteredProducts =
+    search.length < 3
+      ? categoryFiltered
+      : categoryFiltered.filter(item =>
+          item.name.toLowerCase().includes(search.toLowerCase()),
+        );
 
-  const addToCart = async (product) => {
-    const result = await addProductToCart(product);
+  const handleAddToCart = product => {
+    // const result = await addProductToCart(product);
+    // const currentUser = await AsyncStorage.getItem('currentUser');
 
-    if (result.status === 'login_required') {
+    if (!user) {
       Toast.show({
         type: 'info',
         text1: 'Login Required',
-        text2: 'Please login to add items to cart'
+        text2: 'Please login to add items to cart',
       });
       navigation.navigate('Login');
       return;
     }
+    dispatch(addToCart(product));
 
-    if (result.status === 'exists') {
-      Toast.show({
-        type: 'info',
-        text1: 'Already in Cart',
-        text2: 'This item is already in your cart'
-      });
-    }
+    // if (result.status === 'exists') {
+    //   Toast.show({
+    //     type: 'info',
+    //     text1: 'Already in Cart',
+    //     text2: 'This item is already in your cart'
+    //   });
+    // }
 
-    if (result.status === 'added') {
-      Toast.show({
-        type: 'success',
-        text1: 'Added to Cart! 🛒',
-        text2: product.name
-      });
-      getCartCount();
-    }
+    // if (result.status === 'added') {
+    //   Toast.show({
+    //     type: 'success',
+    //     text1: 'Added to Cart! 🛒',
+    //     text2: product.name
+    //   });
+    //   getCartCount();
+    // }
   };
 
-  const getCategoryIcon = (category) => {
+  const getCategoryIcon = category => {
     const icons = {
-      'All': 'apps',
-      'Electronics': 'devices',
-      'Clothing': 'checkroom',
+      All: 'apps',
+      Electronics: 'devices',
+      Clothing: 'checkroom',
       'Home & Garden': 'home',
-      'Sports': 'sports-soccer',
-      'Books': 'menu-book',
-      'Beauty': 'face',
-      'Toys': 'toys',
+      Sports: 'sports-soccer',
+      Books: 'menu-book',
+      Beauty: 'face',
+      Toys: 'toys',
     };
     return icons[category] || 'category';
   };
@@ -167,17 +227,18 @@ const HomeScreen = ({ navigation }) => {
         </Text>
         <Text style={HomeStyles.headerTitle}>What are you looking for?</Text>
       </View>
-      
+
       <View style={HomeStyles.headerRight}>
-        <TouchableOpacity 
+        <TouchableOpacity
+          activeOpacity={0.7}
           style={HomeStyles.notificationBtn}
           // onPress={() => navigation.navigate("AddTask")}
         >
           <MaterialIcons name="notifications-none" size={24} color="#333" />
           <View style={HomeStyles.notificationDot} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={HomeStyles.cartBtn}
           onPress={() => navigation.navigate('Cart')}
         >
@@ -199,11 +260,11 @@ const HomeScreen = ({ navigation }) => {
         style={HomeStyles.searchInput}
         placeholder="Search products, brands..."
         value={search}
-        onChangeText={setSearch}
+        onChangeText={text => dispatch(setSearch(text))}
         placeholderTextColor="#999"
       />
       {search.length > 0 && (
-        <TouchableOpacity onPress={() => setSearch('')}>
+        <TouchableOpacity onPress={() => dispatch(setSearch(''))}>
           <MaterialIcons name="close" size={20} color="#999" />
         </TouchableOpacity>
       )}
@@ -211,8 +272,8 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const renderPromoBanner = () => (
-    <ScrollView 
-      horizontal 
+    <ScrollView
+      horizontal
       showsHorizontalScrollIndicator={false}
       style={HomeStyles.promoContainer}
     >
@@ -224,7 +285,11 @@ const HomeScreen = ({ navigation }) => {
             <Text style={HomeStyles.promoBtnText}>Shop Now</Text>
           </TouchableOpacity>
         </View>
-        <MaterialIcons name="local-offer" size={60} color="rgba(255,255,255,0.3)" />
+        <MaterialIcons
+          name="local-offer"
+          size={60}
+          color="rgba(255,255,255,0.3)"
+        />
       </View>
 
       <View style={[HomeStyles.promoBanner, { backgroundColor: '#4ECDC4' }]}>
@@ -235,7 +300,11 @@ const HomeScreen = ({ navigation }) => {
             <Text style={HomeStyles.promoBtnText}>Learn More</Text>
           </TouchableOpacity>
         </View>
-        <MaterialIcons name="local-shipping" size={60} color="rgba(255,255,255,0.3)" />
+        <MaterialIcons
+          name="local-shipping"
+          size={60}
+          color="rgba(255,255,255,0.3)"
+        />
       </View>
     </ScrollView>
   );
@@ -245,23 +314,27 @@ const HomeScreen = ({ navigation }) => {
       onPress={() => handleCategoryChange(item)}
       style={[
         HomeStyles.categoryCard,
-        selectedCategory === item && HomeStyles.activeCategoryCard
+        selectedCategory === item && HomeStyles.activeCategoryCard,
       ]}
     >
-      <View style={[
-        HomeStyles.categoryIcon,
-        selectedCategory === item && HomeStyles.activeCategoryIcon
-      ]}>
-        <MaterialIcons 
-          name={getCategoryIcon(item)} 
-          size={24} 
-          color={selectedCategory === item ? '#fff' : '#4CAF50'} 
+      <View
+        style={[
+          HomeStyles.categoryIcon,
+          selectedCategory === item && HomeStyles.activeCategoryIcon,
+        ]}
+      >
+        <MaterialIcons
+          name={getCategoryIcon(item)}
+          size={24}
+          color={selectedCategory === item ? '#fff' : '#4CAF50'}
         />
       </View>
-      <Text style={[
-        HomeStyles.categoryText,
-        selectedCategory === item && HomeStyles.activeCategoryText
-      ]}>
+      <Text
+        style={[
+          HomeStyles.categoryText,
+          selectedCategory === item && HomeStyles.activeCategoryText,
+        ]}
+      >
         {item}
       </Text>
     </TouchableOpacity>
@@ -275,12 +348,12 @@ const HomeScreen = ({ navigation }) => {
           <Text style={HomeStyles.seeAllText}>See All</Text>
         </TouchableOpacity>
       </View>
-      
+
       <FlatList
         data={categories}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item}
+        keyExtractor={item => item}
         renderItem={renderCategory}
         contentContainerStyle={HomeStyles.categoriesContent}
       />
@@ -290,7 +363,7 @@ const HomeScreen = ({ navigation }) => {
   const renderFeaturedProduct = ({ item }) => (
     <TouchableOpacity
       style={HomeStyles.featuredCard}
-      onPress={() => navigation.navigate("ProductDetails", { product: item })}
+      onPress={() => navigation.navigate('ProductDetails', { product: item })}
     >
       <Image source={{ uri: item.image }} style={HomeStyles.featuredImage} />
       <View style={HomeStyles.featuredInfo}>
@@ -304,15 +377,15 @@ const HomeScreen = ({ navigation }) => {
           </Text>
         </View>
         <Text style={HomeStyles.featuredPrice}>
-          {/* ₹{(item.priceCents / 100).toFixed(2)} */}
-          ₹{(item.priceCents / 100).toFixed(2)}
+          {/* ₹{(item.priceCents / 100).toFixed(2)} */}₹
+          {(item.priceCents / 100).toFixed(2)}
         </Text>
       </View>
       <TouchableOpacity
         style={HomeStyles.featuredAddBtn}
-        onPress={(e) => {
+        onPress={e => {
           e.stopPropagation();
-          addToCart(item);
+          dispatch(addToCart(item));
         }}
       >
         <MaterialIcons name="add" size={20} color="#fff" />
@@ -328,12 +401,12 @@ const HomeScreen = ({ navigation }) => {
           <Text style={HomeStyles.seeAllText}>See All</Text>
         </TouchableOpacity>
       </View>
-      
+
       <FlatList
         data={featuredProducts}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         // renderItem={renderFeaturedProduct}
         contentContainerStyle={HomeStyles.featuredContent}
       />
@@ -342,14 +415,15 @@ const HomeScreen = ({ navigation }) => {
 
   const renderProduct = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.7}
       style={HomeStyles.productCard}
-      onPress={() => navigation.navigate("ProductDetails", { product: item })}
+      onPress={() => navigation.navigate('ProductDetails', { product: item })}
     >
       <View style={HomeStyles.productImageContainer}>
         <Image source={{ uri: item.image }} style={HomeStyles.productImage} />
         <TouchableOpacity
           style={HomeStyles.wishlistBtn}
-          onPress={(e) => {
+          onPress={e => {
             e.stopPropagation();
             // Handle wishlist
           }}
@@ -357,33 +431,30 @@ const HomeScreen = ({ navigation }) => {
           <MaterialIcons name="favorite-border" size={18} color="#999" />
         </TouchableOpacity>
       </View>
-      
+
       <View style={HomeStyles.productInfo}>
         <Text numberOfLines={2} style={HomeStyles.productTitle}>
           {item.name}
         </Text>
-        
+
         <View style={HomeStyles.productRating}>
           <MaterialIcons name="star" size={12} color="#FFD700" />
-          <Text style={HomeStyles.ratingText}>
-            {item.rating.stars}
-          </Text>
-          <Text style={HomeStyles.ratingCount}>
-            ({item.rating.count})
-          </Text>
+          <Text style={HomeStyles.ratingText}>{item.rating.stars}</Text>
+          <Text style={HomeStyles.ratingCount}>({item.rating.count})</Text>
         </View>
-        
+
         <View style={HomeStyles.productFooter}>
           <Text style={HomeStyles.productPrice}>
-            ₹{(item.priceCents * 92 / 100).toFixed(2)}
+            ₹{((item.priceCents * 92) / 100).toFixed(2)}
             {/* ₹{(item.priceCents / 100).toFixed(2)} */}
           </Text>
-          
+
           <TouchableOpacity
             style={HomeStyles.addToCartBtn}
-            onPress={(e) => {
+            onPress={e => {
               e.stopPropagation();
-              addToCart(item);
+              handleAddToCart(item);
+              // dispatch()
             }}
           >
             <MaterialIcons name="add-shopping-cart" size={16} color="#fff" />
@@ -408,7 +479,9 @@ const HomeScreen = ({ navigation }) => {
       <SafeAreaView style={HomeStyles.container}>
         <View style={HomeStyles.loadingContainer}>
           <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={HomeStyles.loadingText}>Loading amazing products...</Text>
+          <Text style={HomeStyles.loadingText}>
+            Loading amazing products...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -418,7 +491,7 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView style={HomeStyles.container}>
       {renderHeader()}
       {renderSearchBar()}
-      
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -433,18 +506,18 @@ const HomeScreen = ({ navigation }) => {
         {renderPromoBanner()}
         {renderCategories()}
         {/* {renderFeaturedProducts()} */}
-        
+
         {/* Products Section */}
         <View style={HomeStyles.section}>
           <View style={HomeStyles.sectionHeader}>
             <Text style={HomeStyles.sectionTitle}>
-              {selectedCategory === "All" ? "All Products" : selectedCategory}
+              {selectedCategory === 'All' ? 'All Products' : selectedCategory}
             </Text>
             <Text style={HomeStyles.productCount}>
               {filteredProducts.length} items
             </Text>
           </View>
-          
+
           {filteredProducts.length === 0 ? (
             renderEmptyState()
           ) : (
@@ -452,7 +525,7 @@ const HomeScreen = ({ navigation }) => {
               data={filteredProducts}
               numColumns={2}
               showsVerticalScrollIndicator={false}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={item => item.id.toString()}
               renderItem={renderProduct}
               contentContainerStyle={HomeStyles.productsContent}
               scrollEnabled={false}
@@ -465,10 +538,6 @@ const HomeScreen = ({ navigation }) => {
 };
 
 export default HomeScreen;
-
-
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import {
@@ -561,7 +630,7 @@ export default HomeScreen;
 //         type: 'info',
 //         text1: 'Item already in Cart',
 //         position:"top",
-        
+
 //       });
 //     }
 
