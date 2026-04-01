@@ -1,6 +1,8 @@
-import React,{useState} from 'react';
+import React,{useState, useEffect} from 'react';
 import {View, Text, TextInput, TouchableOpacity, Keyboard, Pressable} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {login, clearError} from '../../redux/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginStyles from './style';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
@@ -12,10 +14,28 @@ const LoginScreen = ({navigation}) =>{
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    const dispatch = useDispatch();
+    const {error, isAuthenticated} = useSelector(state => state.auth);
+
     // const givenEmail = "admin@gmail.com";
     // const givenPassword = "123456";
 
-    const handleLogin = async () =>{
+    useEffect(() => {
+      if(error){
+        Toast.show({
+          type:'error',
+          text1: error, 
+        });
+      }
+    },[error]);
+
+    useEffect(() => {
+      if(isAuthenticated){
+        navigation.navigate('Main');
+      }
+    }, [isAuthenticated]);
+
+    const handleLogin =  () =>{
       if(!email || !password){
         // Alert.alert("Enter Email and Password");
         Toast.show({
@@ -24,41 +44,56 @@ const LoginScreen = ({navigation}) =>{
         })
         return;
       }
-      
-      try{
-        const storedUsers = await AsyncStorage.getItem('users');
-        if(!storedUsers){
-          // Alert.alert("No user exists!, Please Sign up");
-          Toast.show({
-            type:'info',
-            text1:'No user Exists! Please Sign up',
-          })
-          return;
-        }
+      dispatch(clearError());
+      dispatch(login({email, password}));
+      // navigation.navigate('Main');
+      // try{
+      //   dispatch(login({email, password}));
+      //   if(error){
+      //     Toast.show({
+      //       type:'error',
+      //       text1:error,
+      //     })
+      //   }
+      //   else if(isAuthenticated){
+      //     navigation.navigate('Main');
+      //   }
+        // const storedUsers = await AsyncStorage.getItem('users');
+        // if(!storedUsers){
+        //   Alert.alert("No user exists!, Please Sign up");
+        //   Toast.show({
+        //     type:'info',
+        //     text1:'No user Exists! Please Sign up',
+        //   })
+        //   return;
+        // }
 
-        const users = JSON.parse(storedUsers);
+        // const users = JSON.parse(storedUsers);
 
-        const user =  users.find(
-          u=>u.email === email && u.password === password
-        );
+        // const user =  users.find(
+        //   u=>u.email === email && u.password === password
+        // );
 
-        if(user){
-          await AsyncStorage.setItem('currentUser', JSON.stringify(user));
-          // navigation.navigate('Home');
-          navigation.navigate('Main');
-        }
-        else{
-          // Alert.alert("Invalid Credentials");
-          Toast.show({
-            type:'info',
-            text1:'Invalid Credentials',
-          })
-        }
-      } 
-      catch(error){
-          console.log(error);
-      }
-    }
+        // if(user){
+        //   await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+        //   // navigation.navigate('Home');
+          // navigation.navigate('Main');
+        // }
+        // else{
+        //   Toast.show({
+        //     type:'info',
+        //     text1:'Invalid Credentials',
+        //   })
+        // }
+        
+      // } 
+      // catch(error){
+      //     Toast.show({
+      //       type:'error',
+      //       text1: error.message,
+      //     });
+      // };
+    };
     
 
     return (

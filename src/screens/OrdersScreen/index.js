@@ -1,135 +1,239 @@
-// // import React from 'react';
-// // import {View, Text} from 'react-native';
-// // import OrdersStyle from './style';
-
-// // const OrdersScreen = () => {
-// //     return (
-// //         <View>
-// //             <Text>Orders</Text>
-// //         </View>
-// //     )
-// // };
-
-// // export default OrdersScreen;
-
-
 // import React, { useState, useEffect } from 'react';
-// import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
+// import {
+//   View,
+//   Text,
+//   FlatList,
+//   TouchableOpacity,
+//   Image,
+//   RefreshControl,
+//   ActivityIndicator,
+//   TextInput,
+// } from 'react-native';
 // import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useIsFocused } from '@react-navigation/native';
-// import { getUserOrders } from '../../utils/orderUtils';
-// import Icon from 'react-native-vector-icons/Ionicons';
+// import { useSelector } from 'react-redux';
+// import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 // import OrdersStyle from './style';
 
 // const OrdersScreen = ({ navigation }) => {
-//   const [orders, setOrders] = useState([]);
-//   const isFocused = useIsFocused();
+//   const orders = useSelector(state => state.orders.orders); // ✅ FIXED
+
+//   const [filteredOrders, setFilteredOrders] = useState([]);
+//   const [isRefreshing, setIsRefreshing] = useState(false);
+//   const [selectedFilter, setSelectedFilter] = useState('All');
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [showSearch, setShowSearch] = useState(false);
+
+//   const filters = ['All', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
 //   useEffect(() => {
-//     if (isFocused) loadOrders();
-//   }, [isFocused]);
+//     filterOrders();
+//   }, [orders, selectedFilter, searchQuery]);
 
-//   const loadOrders = async () => {
-//     const userOrders = await getUserOrders();
-//     setOrders(userOrders.reverse()); // Show latest first
+//   // ✅ FILTER LOGIC
+//   const filterOrders = () => {
+//     let filtered = orders || [];
+
+//     // Filter by status
+//     if (selectedFilter !== 'All') {
+//       filtered = filtered.filter(order => order.status === selectedFilter);
+//     }
+
+//     // Filter by search
+//     if (searchQuery) {
+//       filtered = filtered.filter(order =>
+//         order.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+//         order.items?.some(item =>
+//           item.name.toLowerCase().includes(searchQuery.toLowerCase())
+//         )
+//       );
+//     }
+
+//     setFilteredOrders(filtered);
 //   };
 
-//   const getStatusColor = (status) => {
+//   const onRefresh = () => {
+//     setIsRefreshing(true);
+//     setTimeout(() => setIsRefreshing(false), 800);
+//   };
+
+//   const getStatusColor = status => {
 //     switch (status) {
 //       case 'Delivered': return '#4CAF50';
 //       case 'Shipped': return '#2196F3';
 //       case 'Processing': return '#FF9800';
 //       case 'Cancelled': return '#f44336';
-//       default: return '#888';
+//       default: return '#9E9E9E';
 //     }
 //   };
 
-//   const renderOrder = ({ item }) => (
-//     <TouchableOpacity 
-//       style={OrdersStyle.orderCard}
-//       activeOpacity={0.7}
+//   const getStatusIcon = status => {
+//     switch (status) {
+//       case 'Delivered': return 'check-circle';
+//       case 'Shipped': return 'local-shipping';
+//       case 'Processing': return 'hourglass-empty';
+//       case 'Cancelled': return 'cancel';
+//       default: return 'schedule';
+//     }
+//   };
+
+//   const formatDate = dateString => {
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString('en-US', {
+//       month: 'short',
+//       day: 'numeric',
+//       year: 'numeric',
+//     });
+//   };
+
+//   const renderFilterChip = ({ item }) => (
+//     <TouchableOpacity
+//       style={[
+//         OrdersStyle.filterChip,
+//         selectedFilter === item && OrdersStyle.activeFilterChip,
+//       ]}
+//       onPress={() => setSelectedFilter(item)}
 //     >
+//       <Text
+//         style={[
+//           OrdersStyle.filterText,
+//           selectedFilter === item && OrdersStyle.activeFilterText,
+//         ]}
+//       >
+//         {item}
+//       </Text>
+//     </TouchableOpacity>
+//   );
+
+//   const renderOrder = ({ item }) => (
+//     <TouchableOpacity
+//       style={OrdersStyle.orderCard}
+//       activeOpacity={0.8}
+//       onPress={() => navigation.navigate('OrderDetails', { order: item })}
+//     >
+//       {/* Header */}
 //       <View style={OrdersStyle.orderHeader}>
 //         <View>
-//           <Text style={OrdersStyle.orderId}>Order #{item.id}</Text>
-//           <Text style={OrdersStyle.orderDate}>{item.date} at {item.time}</Text>
+//           <Text style={OrdersStyle.orderId}>#{item.id}</Text>
+//           <Text style={OrdersStyle.orderDate}>{formatDate(item.date)}</Text>
 //         </View>
-//         <View style={[OrdersStyle.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+
+//         <View
+//           style={[
+//             OrdersStyle.statusBadge,
+//             { backgroundColor: getStatusColor(item.status) },
+//           ]}
+//         >
+//           <MaterialIcons
+//             name={getStatusIcon(item.status)}
+//             size={14}
+//             color="#fff"
+//           />
 //           <Text style={OrdersStyle.statusText}>{item.status}</Text>
 //         </View>
 //       </View>
 
-//       <View style={OrdersStyle.divider} />
-
+//       {/* Items */}
 //       <View style={OrdersStyle.orderBody}>
-//         <View style={OrdersStyle.itemsContainer}>
-//           {item.items?.slice(0, 2).map((product, index) => (
-//             <View key={index} style={OrdersStyle.itemRow}>
-//               <Image source={{ uri: product.image }} style={OrdersStyle.itemImage} />
-//               <View style={OrdersStyle.itemInfo}>
-//                 <Text style={OrdersStyle.itemName} numberOfLines={1}>
-//                   {product.name}
-//                 </Text>
-//                 <Text style={OrdersStyle.itemPrice}>
-//                   ${(product.priceCents / 100).toFixed(2)} x {product.quantity}
-//                 </Text>
-//               </View>
+//         {item.items?.slice(0, 2).map((product, idx) => (
+//           <View key={idx} style={OrdersStyle.itemRow}>
+//             <Image
+//               source={{ uri: product.image }}
+//               style={OrdersStyle.itemImage}
+//             />
+//             <View style={OrdersStyle.itemInfo}>
+//               <Text numberOfLines={1} style={OrdersStyle.itemName}>
+//                 {product.name}
+//               </Text>
+//               <Text style={OrdersStyle.itemPrice}>
+//                 ₹{(product.priceCents * 92 / 100).toFixed(2)} × {product.quantity}
+//               </Text>
 //             </View>
-//           ))}
-//           {item.items?.length > 2 && (
-//             <Text style={OrdersStyle.moreItems}>
-//               +{item.items.length - 2} more items
-//             </Text>
-//           )}
-//         </View>
-
-//         <View style={OrdersStyle.orderFooter}>
-//           <View style={OrdersStyle.totalContainer}>
-//             <Text style={OrdersStyle.totalLabel}>Total Amount</Text>
-//             <Text style={OrdersStyle.totalAmount}>
-//               ${(item.total / 100).toFixed(2)}
-//             </Text>
-//             <Text style={OrdersStyle.paymentMethod}>
-//               Payment: {item.paymentMethod === 'COD' ? 'Cash on Delivery' : item.paymentMethod}
-//             </Text>
 //           </View>
-          
-//           <TouchableOpacity style={OrdersStyle.detailsBtn}>
-//             <Text style={OrdersStyle.detailsBtnText}>View Details</Text>
-//             <Icon name="chevron-forward" size={16} color="#4CAF50" />
-//           </TouchableOpacity>
-//         </View>
+//         ))}
+//       </View>
+
+//       {/* Footer */}
+//       <View style={OrdersStyle.orderFooter}>
+//         <Text style={OrdersStyle.totalAmount}>
+//           ₹{(item.total / 100).toFixed(2)}
+//         </Text>
+
+//         <TouchableOpacity
+//           onPress={() => navigation.navigate('OrderDetails', { order: item })}
+//         >
+//           <Text style={OrdersStyle.detailsButton}>View Details →</Text>
+//         </TouchableOpacity>
 //       </View>
 //     </TouchableOpacity>
 //   );
 
+//   const renderEmpty = () => (
+//     <View style={OrdersStyle.emptyContainer}>
+//       <MaterialIcons name="receipt-long" size={80} color="#ccc" />
+//       <Text style={OrdersStyle.emptyTitle}>No Orders Found</Text>
+
+//       <TouchableOpacity
+//         style={OrdersStyle.shopButton}
+//         onPress={() => navigation.navigate('Home')}
+//       >
+//         <Text style={OrdersStyle.shopButtonText}>Start Shopping</Text>
+//       </TouchableOpacity>
+//     </View>
+//   );
+
 //   return (
 //     <SafeAreaView style={OrdersStyle.container}>
+//       {/* Header */}
 //       <View style={OrdersStyle.header}>
-//         <Text style={OrdersStyle.headerTitle}>My Orders</Text>
-//       </View>
+//         <View style={OrdersStyle.headerTop}>
+//           <Text style={OrdersStyle.headerTitle}>My Orders</Text>
 
-//       {orders.length === 0 ? (
-//         <View style={OrdersStyle.emptyContainer}>
-//           <Icon name="receipt-outline" size={80} color="#ccc" />
-//           <Text style={OrdersStyle.emptyTitle}>No Orders Yet</Text>
-//           <Text style={OrdersStyle.emptyText}>
-//             Your orders will appear here once you make a purchase
-//           </Text>
-//           <TouchableOpacity 
-//             style={OrdersStyle.shopBtn}
-//             onPress={() => navigation.navigate('Home')}
-//           >
-//             <Text style={OrdersStyle.shopBtnText}>Start Shopping</Text>
+//           <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
+//             <MaterialIcons
+//               name={showSearch ? 'close' : 'search'}
+//               size={24}
+//               color="#333"
+//             />
 //           </TouchableOpacity>
 //         </View>
+
+//         {showSearch && (
+//           <View style={OrdersStyle.searchContainer}>
+//             <MaterialIcons name="search" size={20} color="#666" />
+//             <TextInput
+//               style={OrdersStyle.searchInput}
+//               placeholder="Search orders..."
+//               value={searchQuery}
+//               onChangeText={setSearchQuery}
+//             />
+//           </View>
+//         )}
+//       </View>
+
+//       {/* Filters */}
+//       <FlatList
+//         data={filters}
+//         renderItem={renderFilterChip}
+//         keyExtractor={item => item}
+//         horizontal
+//         showsHorizontalScrollIndicator={false}
+//         contentContainerStyle={OrdersStyle.filtersContainer}
+//       />
+
+//       {/* Orders */}
+//       {filteredOrders.length === 0 ? (
+//         renderEmpty()
 //       ) : (
 //         <FlatList
-//           data={orders}
+//           data={filteredOrders}
 //           renderItem={renderOrder}
-//           keyExtractor={(item, index) => index.toString()}
-//           contentContainerStyle={OrdersStyle.listContent}
-//           showsVerticalScrollIndicator={false}
+//           keyExtractor={item => item.id.toString()}
+//           refreshControl={
+//             <RefreshControl
+//               refreshing={isRefreshing}
+//               onRefresh={onRefresh}
+//             />
+//           }
 //         />
 //       )}
 //     </SafeAreaView>
@@ -153,12 +257,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
 import { getUserOrders } from '../../utils/orderUtils';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import OrdersStyle from './style';
 
 const OrdersScreen = ({ navigation }) => {
-  const [orders, setOrders] = useState([]);
+  // const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -166,6 +271,8 @@ const OrdersScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const isFocused = useIsFocused();
+
+  const orders = useSelector(state => state.orders.orders);
 
   const filters = ['All', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
