@@ -280,178 +280,190 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { removeFromCart } from "../../utils/cartUtils";
+// import { removeFromCart } from "../../utils/cartUtils";
 import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector, useDispatch } from "react-redux";
+import { removeFromCart, incrementQuantity, decrementQuantity, setCart, toggleSelectedItems, selectAllItems, clearAllItems } from "../../redux/slices/cartSlice";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/Ionicons";
 import CartStyle from "./style";
 
 const CartScreen = ({ navigation }) => {
-  const [cart, setCart] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
+  // const [cart, setCart] = useState([]);
+  const user = useSelector(state => state.auth.currentUser);
+  const cart = useSelector(state => state.cart.items);
+  const selectedItems = useSelector(state => state.cart.selectedItems);
+  const selectedProducts = cart.filter(item => selectedItems.includes(item.id));
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadCart();
-      loadSelectedItems();
-    }, [])
+  const {totalPrice, totalItems} = selectedProducts.reduce(
+    (acc, item) => {
+      acc.totalPrice += item.priceCents * item.quantity;
+      acc.totalItems += item.quantity;
+      return acc;
+    },
+    {totalPrice : 0, totalItems : 0}
   );
 
-  const loadCart = async () => {
+  const dispatch = useDispatch();
+  // const [selectedItems, setSelectedItems] = useState([]);
+
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     const loadPresistedCart = async () => {
+  //       // const storedCart = await AsyncStorage.getItem("cart");
+  //       if(cart){
+  //         dispatch(setCart(cart));
+  //       }
+  //     };
+  //     loadPresistedCart();
+  //     // loadSelectedItems();
+  //   }, [cart])
+  // );
+
+
+
+
+
+  // const loadSelectedItems = async () => {
+  //   try {
+      // const currentUser = await AsyncStorage.getItem('currentUser');
+      // if (!user) return;
+      // const selectedProducts = cart.filter(item => selectedItems.includes(item.id));
+      // const user = JSON.parse(currentUser);
+      // const selectedKey = `selected_cart_${user.email}`;
+      // const storedSelected = await AsyncStorage.getItem(selectedKey);
+      // const storedSelected = selectedKey;
+
+      // if (storedSelected) {
+      //   setSelectedItems(JSON.parse(storedSelected));
+      // }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
+  // const saveCart = async updatedCart => {
+  //   try {
+  //     const currentUser = await AsyncStorage.getItem("currentUser");
+  //     if (!currentUser) return;
+
+  //     const user = JSON.parse(currentUser);
+  //     const cartKey = `cart_${user.email}`;
+
+  //     setCart(updatedCart);
+  //     await AsyncStorage.setItem(cartKey, JSON.stringify(updatedCart));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
+  // const removeItem = async id => {
+  //   Alert.alert(
+  //     "Remove Item",
+  //     "Are you sure you want to remove this item from cart?",
+  //     [
+  //       { text: "Cancel", style: "cancel" },
+  //       {
+  //         text: "Remove",
+  //         style: "destructive",
+  //         onPress: async () => {
+  //           const updatedCart = cart.filter(item => item.id !== id);
+  //           saveCart(updatedCart);
+  //           await removeFromCart(id);
+
+  //           const updatedSelected = selectedItems.filter(itemId => itemId !== id);
+  //           setSelectedItems(updatedSelected);
+
+  //           const currentUser = await AsyncStorage.getItem('currentUser');
+  //           const user = JSON.parse(currentUser);
+  //           const selectedKey = `selected_cart_${user.email}`;
+  //           await AsyncStorage.setItem(selectedKey, JSON.stringify(updatedSelected));
+  //         }
+  //       }
+  //     ]
+  //   );
+  // };
+
+  const removeItem = (id) =>{
+    dispatch(removeFromCart({id}));
+  };
+
+  
+  const incQuantity = (id) => {
+    dispatch(incrementQuantity({id}));
+  };
+
+
+ 
+
+  const decQuantity = (id) => {
+    dispatch(decrementQuantity({id}));
+  }
+
+  const toggleSelect = (id) => {
     try {
-      const currentUser = await AsyncStorage.getItem("currentUser");
-      if (!currentUser) return;
+      // const currentUser = await AsyncStorage.getItem('currentUser');
+      if (!user) return;
 
-      const user = JSON.parse(currentUser);
-      const cartKey = `cart_${user.email}`;
-      const storedCart = await AsyncStorage.getItem(cartKey);
+      // const user = JSON.parse(currentUser);
+      // const selectedKey = `selected_cart_${user.email}`;
 
-      if (storedCart) {
-        const parsedCart = JSON.parse(storedCart).map(item => ({
-          ...item,
-          quantity: item.quantity || 1,
-        }));
-        setCart(parsedCart);
-      }
+      // let updatedSelection;
+      // if (selectedItems.includes(id)) {
+      //   updatedSelection = selectedItems.filter(item => item !== id);
+      // } else {
+      //   updatedSelection = [...selectedItems, id];
+      // }
+      dispatch(toggleSelectedItems(id));
+
+      // setSelectedItems(updatedSelection);
+      // await AsyncStorage.setItem(selectedKey, JSON.stringify(updatedSelection));
     } catch (error) {
       console.log(error);
     }
   };
 
-  const loadSelectedItems = async () => {
-    try {
-      const currentUser = await AsyncStorage.getItem('currentUser');
-      if (!currentUser) return;
+  const selectAll =  () => {
+    // const allIds = cart.map(item => item.id);
+    // setSelectedItems(allIds);
+    dispatch(selectAllItems());
 
-      const user = JSON.parse(currentUser);
-      const selectedKey = `selected_cart_${user.email}`;
-      const storedSelected = await AsyncStorage.getItem(selectedKey);
-
-      if (storedSelected) {
-        setSelectedItems(JSON.parse(storedSelected));
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    // const currentUser = await AsyncStorage.getItem('currentUser');
+    // const user = JSON.parse(currentUser);
+    // const selectedKey = `selected_cart_${user.email}`;
+    // await AsyncStorage.setItem(selectedKey, JSON.stringify(allIds));
   };
 
-  const saveCart = async updatedCart => {
-    try {
-      const currentUser = await AsyncStorage.getItem("currentUser");
-      if (!currentUser) return;
+  const deselectAll = () => {
+    // setSelectedItems([]);
+    dispatch(clearAllItems());
 
-      const user = JSON.parse(currentUser);
-      const cartKey = `cart_${user.email}`;
-
-      setCart(updatedCart);
-      await AsyncStorage.setItem(cartKey, JSON.stringify(updatedCart));
-    } catch (error) {
-      console.log(error);
-    }
+    // const currentUser = await AsyncStorage.getItem('currentUser');
+    // const user = JSON.parse(currentUser);
+    // const selectedKey = `selected_cart_${user.email}`;
+    // await AsyncStorage.setItem(selectedKey, JSON.stringify([]));
   };
 
-  const removeItem = async id => {
-    Alert.alert(
-      "Remove Item",
-      "Are you sure you want to remove this item from cart?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const updatedCart = cart.filter(item => item.id !== id);
-            saveCart(updatedCart);
-            await removeFromCart(id);
+  // const getTotalPrice = () => {
+  //   return cart.reduce((total, item) => {
+  //     if (selectedItems.includes(item.id)) {
+  //       const price = item.priceCents || 0;
+  //       const qty = item.quantity || 1;
+  //       return total +  (price * qty);
+  //     }
+  //     return total;
+  //   }, 0);
+  // };
 
-            const updatedSelected = selectedItems.filter(itemId => itemId !== id);
-            setSelectedItems(updatedSelected);
-
-            const currentUser = await AsyncStorage.getItem('currentUser');
-            const user = JSON.parse(currentUser);
-            const selectedKey = `selected_cart_${user.email}`;
-            await AsyncStorage.setItem(selectedKey, JSON.stringify(updatedSelected));
-          }
-        }
-      ]
-    );
-  };
-
-  const incrementQuantity = id => {
-    const updatedCart = cart.map(item =>
-      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-    );
-    saveCart(updatedCart);
-  };
-
-  const decrementQuantity = id => {
-    const updatedCart = cart.map(item =>
-      item.id === id && item.quantity > 1
-        ? { ...item, quantity: item.quantity - 1 }
-        : item
-    );
-    saveCart(updatedCart);
-  };
-
-  const toggleSelect = async id => {
-    try {
-      const currentUser = await AsyncStorage.getItem('currentUser');
-      if (!currentUser) return;
-
-      const user = JSON.parse(currentUser);
-      const selectedKey = `selected_cart_${user.email}`;
-
-      let updatedSelection;
-      if (selectedItems.includes(id)) {
-        updatedSelection = selectedItems.filter(item => item !== id);
-      } else {
-        updatedSelection = [...selectedItems, id];
-      }
-
-      setSelectedItems(updatedSelection);
-      await AsyncStorage.setItem(selectedKey, JSON.stringify(updatedSelection));
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const selectAll = async () => {
-    const allIds = cart.map(item => item.id);
-    setSelectedItems(allIds);
-
-    const currentUser = await AsyncStorage.getItem('currentUser');
-    const user = JSON.parse(currentUser);
-    const selectedKey = `selected_cart_${user.email}`;
-    await AsyncStorage.setItem(selectedKey, JSON.stringify(allIds));
-  };
-
-  const deselectAll = async () => {
-    setSelectedItems([]);
-
-    const currentUser = await AsyncStorage.getItem('currentUser');
-    const user = JSON.parse(currentUser);
-    const selectedKey = `selected_cart_${user.email}`;
-    await AsyncStorage.setItem(selectedKey, JSON.stringify([]));
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => {
-      if (selectedItems.includes(item.id)) {
-        return total + item.priceCents * item.quantity;
-      }
-      return total;
-    }, 0);
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => {
-      if (selectedItems.includes(item.id)) {
-        return total + item.quantity;
-      }
-      return total;
-    }, 0);
-  };
+  // const getTotalItems = () => {
+  //   return cart.reduce((total, item) => {
+  //     if (selectedItems.includes(item.id)) {
+  //       return total + item.quantity;
+  //     }
+  //     return total;
+  //   }, 0);
+  // };
 
   const viewDetails = item => {
     navigation.navigate("ProductDetails", { product: item });
@@ -532,7 +544,9 @@ const CartScreen = ({ navigation }) => {
                   </TouchableOpacity>
 
                   {/* Product Image */}
-                  <TouchableOpacity onPress={() => viewDetails(item)}>
+                  <TouchableOpacity 
+                  // activeOpacity={0.7}
+                   onPress={() => viewDetails(item)}>
                     <Image source={{ uri: item.image }} style={CartStyle.image} />
                   </TouchableOpacity>
 
@@ -553,7 +567,7 @@ const CartScreen = ({ navigation }) => {
                     {/* Quantity Controls */}
                     <View style={CartStyle.quantityContainer}>
                       <TouchableOpacity
-                        onPress={() => decrementQuantity(item.id)}
+                        onPress={() => decQuantity(item.id)}
                         style={[CartStyle.qtyBtn, item.quantity === 1 && CartStyle.qtyBtnDisabled]}
                         disabled={item.quantity === 1}
                       >
@@ -563,7 +577,7 @@ const CartScreen = ({ navigation }) => {
                       <Text style={CartStyle.qtyNumber}>{item.quantity}</Text>
 
                       <TouchableOpacity
-                        onPress={() => incrementQuantity(item.id)}
+                        onPress={() => incQuantity(item.id)}
                         style={CartStyle.qtyBtn}
                       >
                         <Icon name="add" size={16} color="#666" />
@@ -590,10 +604,10 @@ const CartScreen = ({ navigation }) => {
         <View style={CartStyle.checkoutBar}>
           <View style={CartStyle.totalSection}>
             <Text style={CartStyle.itemsSelected}>
-              {getTotalItems()} item{getTotalItems() > 1 ? 's' : ''} selected
+              {totalItems} item{totalItems > 1 ? 's' : ''} selected
             </Text>
             <Text style={CartStyle.totalPrice}>
-              ₹{(getTotalPrice() *92 / 100).toFixed(2)}
+              ₹{(totalPrice *92 / 100).toFixed(2)}
             </Text>
           </View>
 

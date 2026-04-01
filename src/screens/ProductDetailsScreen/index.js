@@ -170,9 +170,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { addProductToCart } from '../../utils/cartUtils';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { addToCart, clearLastAction } from '../../redux/slices/cartSlice';
+// import { addProductToCart } from '../../utils/cartUtils';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, clearLastAction } from '../../redux/slices/cartSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Toast from 'react-native-toast-message';
@@ -182,11 +182,12 @@ const { width, height } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
   const { product } = route.params;
-  const [cartCount, setCartCount] = useState(0);
+  // const [cartCount, setCartCount] = useState(0);
 
-  // const cartItems = useSelector(state => state.cart.items);
-  // const lastAction = useSelector(state => state.cart.lastAction);
-  // const cartCount = cartItems.length;
+  const cartItems = useSelector(state => state.cart.items);
+  const lastAction = useSelector(state => state.cart.lastAction);
+  const cartCount = cartItems.length;
+  const user = useSelector(state => state.auth.currentUser);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -195,7 +196,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   const [scrollY] = useState(new Animated.Value(0));
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   // Mock additional images (in real app, these would come from API)
   const productImages = [
@@ -205,64 +206,64 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   ];
 
   useEffect(() => {
-    getCartCount();
+    // getCartCount();
     checkIfFavorite();
     const unsubscribe = navigation.addListener('focus', () => {
       checkIfFavorite();
-      getCartCount();
+      // getCartCount();
     });
     return unsubscribe;
   }, [navigation]);
 
-//   useEffect(() => {
-//   if (!lastAction) return;
+  useEffect(() => {
+  if (!lastAction) return;
 
-//   if (lastAction.type === 'updated') {
-//     Toast.show({
-//       type: 'info',
-//       text1: 'Quantity Updated!',
-//       text2: `${lastAction.item.name} quantity increased`,
-//     });
-//   }
+  if (lastAction.type === 'updated') {
+    Toast.show({
+      type: 'info',
+      text1: 'Quantity Updated!',
+      text2: `${lastAction.item.name} quantity increased`,
+    });
+  }
 
-//   if (lastAction.type === 'added') {
-//     Toast.show({
-//       type: 'success',
-//       text1: 'Added to Cart! 🛒',
-//       text2: `${lastAction.item.quantity} x ${lastAction.item.name}`,
-//       onHide: () => {
-//         navigation.navigate('Main', { screen: 'Cart' });
-//       },
-//     });
-//   }
+  if (lastAction.type === 'added') {
+    Toast.show({
+      type: 'success',
+      text1: 'Added to Cart! 🛒',
+      text2: `${lastAction.item.quantity} x ${lastAction.item.name}`,
+      onHide: () => {
+        navigation.navigate('Main', { screen: 'Cart' });
+      },
+    });
+  }
 
-//   dispatch(clearLastAction());
-// }, [lastAction, navigation, dispatch]);
+  dispatch(clearLastAction());
+}, [lastAction, navigation, dispatch]);
 
   
 
-  const getCartCount = async () => {
-    try {
-      const currentUser = await AsyncStorage.getItem('currentUser');
-      if (!currentUser) {
-        setCartCount(0);
-        return;
-      }
+  // const getCartCount = async () => {
+  //   try {
+  //     const currentUser = await AsyncStorage.getItem('currentUser');
+  //     if (!currentUser) {
+  //       setCartCount(0);
+  //       return;
+  //     }
 
-      const user = JSON.parse(currentUser);
-      const cartKey = `cart_${user.email}`;
-      const cart = await AsyncStorage.getItem(cartKey);
+  //     const user = JSON.parse(currentUser);
+  //     const cartKey = `cart_${user.email}`;
+  //     const cart = await AsyncStorage.getItem(cartKey);
 
-      if (cart) {
-        const cartItems = JSON.parse(cart);
-        setCartCount(cartItems.length);
-      } else {
-        setCartCount(0);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //     if (cart) {
+  //       const cartItems = JSON.parse(cart);
+  //       setCartCount(cartItems.length);
+  //     } else {
+  //       setCartCount(0);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   const checkIfFavorite = async () => {
     try {
@@ -321,24 +322,24 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  // const handleAddToCart = async () => {
-  //   try {
-  //     setIsAddingToCart(true);
+  const handleAddToCart = async () => {
+    try {
+      setIsAddingToCart(true);
       // const productWithQuantity = { ...product, quantity };
       // const result = await addProductToCart(productWithQuantity);
 
       // const currentUser = await AsyncStorage.getItem('currentUser');
-      // if(!currentUser){
-      //   Toast.show({
-      //     type:'info',
-      //     text1:'Login Required',
-      //     text2:'Please login to add items to cart'
-      //   });
-      //   navigation.navigate('Login');
-      //   return;
-      // }
-      // const productWithQuantity = {...product, quantity};
-      // dispatch(addToCart(productWithQuantity));
+      if(!user){
+        Toast.show({
+          type:'info',
+          text1:'Login Required',
+          text2:'Please login to add items to cart'
+        });
+        navigation.navigate('Login');
+        return;
+      }
+      const productWithQuantity = {...product, quantity};
+      dispatch(addToCart(productWithQuantity));
 
       // const currentLastAction = store.getState().cart.lastAction;
 
@@ -381,63 +382,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
       //   // getCartCount();
       //   dispatch(clearLastAction());
       // }
-  //   } 
-  //   catch (error) {
-  //     console.log(error);
-  //     Toast.show({
-  //       type: 'error',
-  //       text1: 'Error',
-  //       text2: 'Failed to add item to cart'
-  //     });
-  //   } finally {
-  //     setIsAddingToCart(false);
-  //   }
-  // };
-
-  const handleAddToCart = async () => {
-    try {
-      setIsAddingToCart(true);
-
-      const productWithQuantity = { ...product, quantity };
-      const result = await addProductToCart(productWithQuantity);
-
-      if (result.status === 'login_required') {
-        Toast.show({
-          type: 'info',
-          text1: 'Login Required',
-          text2: 'Please login to add items to cart',
-        });
-        navigation.navigate('Login');
-        return;
-      }
-
-      if (result.status === 'exists') {
-        Toast.show({
-          type: 'info',
-          text1: 'Already in Cart',
-          text2: 'This item is already in your cart',
-        });
-      }
-
-      if (result.status === 'added') {
-        Toast.show({
-          type: 'success',
-          text1: 'Added to Cart! 🛒',
-          text2: `${quantity} x ${product.name}`,
-          onHide: () => {
-            navigation.navigate('Main', { screen: 'Cart' });
-          },
-        });
-
-        getCartCount();
-      }
-    } catch (error) {
+    } 
+    catch (error) {
       console.log(error);
-
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to add item to cart',
+        text2: 'Failed to add item to cart'
       });
     } finally {
       setIsAddingToCart(false);

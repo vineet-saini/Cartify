@@ -294,6 +294,7 @@ const OrdersStyle = StyleSheet.create({
   },
 
   filterChip: {
+    // height:40,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -324,6 +325,7 @@ const OrdersStyle = StyleSheet.create({
   },
 
   orderCard: {
+    // flex:1,
     backgroundColor: '#fff',
     borderRadius: 16,
     marginBottom: 16,
@@ -567,6 +569,7 @@ const OrdersStyle = StyleSheet.create({
 
   emptyContainer: {
     flex: 1,
+    height:669,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
